@@ -26,10 +26,6 @@ const getNextDeparture = (firstDepartureTime, frequencyMinutes) => {
     .set({hours, minutes})
     .setZone(timeZone)
 
-  // if (now > departure) {
-  //   departure = departure.plus({minutes: frequencyMinutes})
-  // }
-
   const endOfDay = DateTime.now()
     .set({hours: 23, minutes: 59, seconds: 59})
     .setZone(timeZone)
@@ -72,8 +68,8 @@ app.get('/next-departure', async (req, res) => {
   try {
     const updatedBuses = await sendUpdatedData()
     res.json(updatedBuses)
-    console.log('updatedBuses: ', updatedBuses);
   } catch (e) {
+    res.status(500)
     res.send(e);
   }
 })
