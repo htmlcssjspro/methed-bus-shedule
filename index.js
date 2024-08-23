@@ -8,10 +8,14 @@ import { DateTime } from 'luxon';
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
-const port = 3000
 
+const port = 3000
 const timeZone = 'UTC'
+
+
+const app = express();
+app.use(express.static(path.join(__dirname, 'public')))
+
 
 const loadBuses = async () => {
   const data = await readFile(path.join(__dirname, './buses.json'), 'utf-8')
@@ -52,13 +56,22 @@ const sendUpdatedData = async () => {
     const nextDeparture = getNextDeparture(bus.firstDepartureTime, bus.frequencyMinutes)
 
     return {...bus, nextDeparture: {
-      data: nextDeparture.toFormat('yyyy-MM-dd'),
+      date: nextDeparture.toFormat('yyyy-MM-dd'),
       time: nextDeparture.toFormat('HH:mm:ss'),
     }}
   })
 
   return updatedBuses
 }
+
+const sortBuses = buses =>
+  [...buses].sort((a, b) =>
+    DateTime.fromISO(`${a.nextDeparture.date}T${a.nextDeparture.time}Z`) -
+    DateTime.fromISO(`${b.nextDeparture.date}T${b.nextDeparture.time}Z`)
+    // new Date(`${a.nextDeparture.date}T${a.nextDeparture.time}Z`) -
+    // new Date(`${b.nextDeparture.date}T${b.nextDeparture.time}Z`)
+  )
+
 
 app.get('/', (req, res) => {
   res.send('Home Page');
@@ -67,7 +80,8 @@ app.get('/', (req, res) => {
 app.get('/next-departure', async (req, res) => {
   try {
     const updatedBuses = await sendUpdatedData()
-    res.json(updatedBuses)
+    const sortedBuses = sortBuses(updatedBuses)
+    res.json(sortedBuses)
   } catch (e) {
     res.status(500)
     res.send(e);
